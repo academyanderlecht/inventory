@@ -10,70 +10,65 @@
 <body>
     <h3>جارٍ التحقق من الموقع الجغرافي...</h3>
     <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
-    
-    <button onclick="checkLocationAndSendData()">تسجيل الحضور / الانصراف</button>
+    <button onclick="checkLocationAndSendData('حضور')">تسجيل الحضور</button>
+<button onclick="checkLocationAndSendData('انصراف')">تسجيل الانصراف</button>
+
 
     <script>
-        var googleScriptURL = "https://script.google.com/macros/s/AKfycbxUZt1h5-Pze39gIqFlAJR0SFMQHY9qnwYN18gxWvyVMIlQSWzj7eNRFUbewUKTbtl9/exec"; // ضع رابط الـ Apps Script هنا
-        var companyLat = 30.0563427;
-        var companyLon = 30.9509969;
+        var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec"; // ضع رابط الـ Apps Script هنا
+var companyLat = 30.0569716;
+var companyLon = 30.9519971;
+
         var deviceFingerprint = "";
 
-        async function loadFingerprint() {
-            try {
-                const fp = await FingerprintJS.load();
-                const result = await fp.get();
-                deviceFingerprint = result.visitorId;
-                document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة!";
-            } catch (error) {
-                document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
-            }
+        
+
+ function checkLocationAndSendData(status) {
+    if (!navigator.geolocation) {
+        alert("❌ جهازك لا يدعم الموقع الجغرافي.");
+        return;
+    }
+
+    if (!deviceFingerprint) {
+        alert("🔄 لم يتم تحميل بصمة الجهاز بعد. انتظر قليلًا.");
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(function(position) {
+        var userLat = position.coords.latitude;
+        var userLon = position.coords.longitude;
+        var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
+
+        if (distance <= 1) {
+            sendDataToGoogleSheets(userLat, userLon, deviceFingerprint, status);
+        } else {
+            alert("❌ أنت خارج نطاق الشركة.");
         }
+    }, function(error) {
+        alert("❌ حدث خطأ أثناء جمع الموقع: " + error.message);
+    });
+}
 
-        function checkLocationAndSendData() {
-            if (!navigator.geolocation) {
-                alert("❌ جهازك لا يدعم الموقع الجغرافي.");
-                return;
-            }
+function sendDataToGoogleSheets(latitude, longitude, fingerprint, status) {
+    var data = new FormData();
+    data.append("fingerprint", fingerprint);
+    data.append("latitude", latitude);
+    data.append("longitude", longitude);
+    data.append("status", status); // إرسال "حضور" أو "انصراف"
 
-            if (!deviceFingerprint) {
-                alert("🔄 لم يتم تحميل بصمة الجهاز بعد. انتظر قليلًا.");
-                return;
-            }
+    fetch(googleScriptURL, {
+        method: "POST",
+        body: data
+    })
+    .then(response => response.text())
+    .then(responseText => {
+        alert(responseText);
+    })
+    .catch(error => {
+        alert("❌ حدث خطأ أثناء الإرسال: " + error);
+    });
+}
 
-            navigator.geolocation.getCurrentPosition(function(position) {
-                var userLat = position.coords.latitude;
-                var userLon = position.coords.longitude;
-                var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
-
-                if (distance <= 55) {
-                    sendDataToGoogleSheets(userLat, userLon, deviceFingerprint);
-                } else {
-                    alert("❌ أنت خارج نطاق الشركة.");
-                }
-            }, function(error) {
-                alert("❌ حدث خطأ أثناء جمع الموقع: " + error.message);
-            });
-        }
-
-        function sendDataToGoogleSheets(latitude, longitude, fingerprint) {
-            var data = new FormData();
-            data.append("fingerprint", fingerprint);
-            data.append("latitude", latitude);
-            data.append("longitude", longitude);
-
-            fetch(googleScriptURL, {
-                method: "POST",
-                body: data
-            })
-            .then(response => response.text())
-            .then(responseText => {
-                alert(responseText);
-            })
-            .catch(error => {
-                alert("❌ حدث خطأ أثناء الإرسال: " + error);
-            });
-        }
 
         function calculateDistance(lat1, lon1, lat2, lon2) {
             var R = 6371;
