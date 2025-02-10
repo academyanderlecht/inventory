@@ -1,17 +1,106 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>طلبات الفروع</title>
-  <script>
-    // إعادة التوجيه إلى رابط Google Sheets
-    window.onload = function() {
-      window.location.href = "https://script.google.com/macros/s/AKfycbwm1NfCAXGdkDXXk9u__kOgTOV6RX6dOxBhhgP2iHmp5934gyoMahscWRIiHqOfwjE6hA/exec";
-    };
-  </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الحضور والانصراف</title>
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+
 </head>
 <body>
-  <p>جاري إعادة التوجيه إلى الصفحة...</p>
+    <h3>جارٍ التحقق من الموقع الجغرافي...</h3>
+    <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
+    
+    <button onclick="checkLocationAndSendData()">تسجيل الحضور / الانصراف</button>
+
+    <script>
+        var googleScriptURL = "https://script.google.com/macros/s/AKfycbxUZt1h5-Pze39gIqFlAJR0SFMQHY9qnwYN18gxWvyVMIlQSWzj7eNRFUbewUKTbtl9/exec"; // ضع رابط الـ Apps Script هنا
+        var companyLat = 30.0563427;
+        var companyLon = 30.9509969;
+        var deviceFingerprint = "";
+
+        async function loadFingerprint() {
+            try {
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+                deviceFingerprint = result.visitorId;
+                document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة!";
+            } catch (error) {
+                document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
+            }
+        }
+
+        function checkLocationAndSendData() {
+            if (!navigator.geolocation) {
+                alert("❌ جهازك لا يدعم الموقع الجغرافي.");
+                return;
+            }
+
+            if (!deviceFingerprint) {
+                alert("🔄 لم يتم تحميل بصمة الجهاز بعد. انتظر قليلًا.");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(function(position) {
+                var userLat = position.coords.latitude;
+                var userLon = position.coords.longitude;
+                var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
+
+                if (distance <= 55) {
+                    sendDataToGoogleSheets(userLat, userLon, deviceFingerprint);
+                } else {
+                    alert("❌ أنت خارج نطاق الشركة.");
+                }
+            }, function(error) {
+                alert("❌ حدث خطأ أثناء جمع الموقع: " + error.message);
+            });
+        }
+
+        function sendDataToGoogleSheets(latitude, longitude, fingerprint) {
+            var data = new FormData();
+            data.append("fingerprint", fingerprint);
+            data.append("latitude", latitude);
+            data.append("longitude", longitude);
+
+            fetch(googleScriptURL, {
+                method: "POST",
+                body: data
+            })
+            .then(response => response.text())
+            .then(responseText => {
+                alert(responseText);
+            })
+            .catch(error => {
+                alert("❌ حدث خطأ أثناء الإرسال: " + error);
+            });
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            var R = 6371;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLon = (lon2 - lon1) * Math.PI / 180;
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+async function loadFingerprint() {
+    try {
+        const fpPromise = FingerprintJS.load();
+        const fp = await fpPromise;
+        const result = await fp.get();
+        deviceFingerprint = result.visitorId;
+        document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة!";
+        console.log("بصمة الجهاز:", deviceFingerprint);
+    } catch (error) {
+        document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
+        console.error("خطأ في تحميل بصمة الجهاز:", error);
+    }
+}
+
+        window.onload = loadFingerprint;
+    </script>
+
 </body>
 </html>
