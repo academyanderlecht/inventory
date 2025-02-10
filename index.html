@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="ar">
 <head>
-<!DOCTYPE html>
-<html lang="ar">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الحضور والانصراف</title>
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    
+    <!-- استدعاء مكتبة Leaflet للخرائط -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
     <style>
         * {
             margin: 0;
@@ -29,9 +31,18 @@
         }
         h2 {
             font-size: 26px;
-            margin-bottom: 200px;
+            margin-bottom: 15px;
             font-weight: bold;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #map {
+            width: 90%;
+            max-width: 400px;
+            height: 250px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 3px solid white;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
         }
         .container {
             background: rgba(255, 255, 255, 0.1);
@@ -83,15 +94,61 @@
     <!-- 📌 العنوان الرئيسي -->
     <h2>📌 نظام تسجيل الحضور والانصراف</h2>
 
-    <div class="container">
 
+    <div class="container">
+      
+    <!-- 🗺️ خريطة الموقع -->
+    <div id="map">🔄 جارٍ تحميل الخريطة...</div>
 
         <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
         <button class="btn attendance" onclick="registerAttendance()">✅ تسجيل الحضور</button>
         <button class="btn departure" onclick="registerDeparture()">❌ تسجيل الانصراف</button>
     </div>
+
+    <script>
+        var map, marker;
+
+        function initMap() {
+            // إنشاء خريطة فارغة بمكان افتراضي
+            map = L.map('map').setView([30.0569716, 30.9519971], 15); 
+
+            // تحميل خريطة من OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(
+                    function (position) {
+                        var userLat = position.coords.latitude;
+                        var userLon = position.coords.longitude;
+
+                        // تحديث الموقع على الخريطة
+                        var userLocation = [userLat, userLon];
+
+                        if (!marker) {
+                            marker = L.marker(userLocation).addTo(map).bindPopup("📍 موقعك الحالي");
+                        } else {
+                            marker.setLatLng(userLocation);
+                        }
+
+                        map.setView(userLocation, 15);
+                    },
+                    function (error) {
+                        document.getElementById("map").innerText = "❌ لم يتمكن من تحميل الموقع.";
+                        console.error("خطأ في تحديد الموقع:", error);
+                    }
+                );
+            } else {
+                document.getElementById("map").innerText = "❌ جهازك لا يدعم الموقع الجغرافي.";
+            }
+        }
+
+        window.onload = initMap;
+    </script>
 </body>
 </html>
+
 
     <script>
         var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec";
