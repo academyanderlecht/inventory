@@ -22,19 +22,19 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            height: 80vh;
             text-align: center;
         }
         h2 {
             font-size: 26px;
-            margin-bottom: 20px;
+            margin-bottom: 80px;
             font-weight: bold;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
         }
        #map-container {
     position: relative;
     width: 100%;
-    max-width: 400px; /* عرض الخريطة */
+    max-width: 800px; /* عرض الخريطة */
     height: 300px; /* ارتفاع الخريطة */
     margin-bottom: 15px;
 }
@@ -45,28 +45,7 @@
     border-radius: 8px;
 }
 
-.locate-btn {
-    position: absolute;
-  top: 240px;  /* تثبيت الزر في أعلى الخريطة */
-    left: 50%;
-    transform: translateX(-50%); /* توسيط الزر أفقياً */
-    padding: 2px 4px;  /* تقليل حجم الزر */
-    font-size: 12px;
-    background: #3498db;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.3s ease, transform 0.2s ease;
-}
 
-.locate-btn:hover {
-    background: #2980b9;
-}
-
-.locate-btn:active {
-    transform: translateX(-50%) scale(0.95);
-}
 
         .container {
             background: rgba(255, 255, 255, 0.1);
@@ -74,40 +53,89 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            width: 90%;
-            max-width: 400px;
+            width: 100%;
+            max-width: 450px;
+            height: 500px;
         }
         p {
             font-size: 16px;
             margin-bottom: 15px;
             font-weight: 600;
-        }
-        .btn {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            font-size: 18px;
-            font-weight: bold;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .btn.attendance {
-            background: #2ecc71;
-            color: white;
-        }
-        .btn.attendance:hover {
-            background: #27ae60;
-        }
-        .btn.departure {
-            background: #e74c3c;
-            color: white;
-        }
-        .btn.departure:hover {
-            background: #c0392b;
-        }
+}
+
+/* ✅ زر تحديد الموقع */
+.locate-btn {
+    position: absolute;
+    bottom: 5px;  /* تم نقله للأسفل */
+    left: 10px;   /* تم نقله لليمين */
+    width: 45px;   /* حجم الزر */
+    height: 45px;
+    background: white; /* لون الزر */
+    color: #3498db; /* لون الأيقونة */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+}
+
+.locate-btn:hover {
+    background: #f0f0f0;
+}
+
+.locate-btn:active {
+    transform: scale(0.95);
+}
+
+
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 50px; /* تحريك الأزرار لأسفل */
+}
+
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+/* ❗ التحكم في حجم زر الحضور */
+.btn.attendance {
+    background: #2ecc71;
+    color: white;
+    width: 160px;  /* تغيير العرض */
+    height: 50px;  /* تغيير الارتفاع */
+}
+
+.btn.attendance:hover {
+    background: #27ae60;
+}
+
+/* ❗ التحكم في حجم زر الانصراف */
+.btn.departure {
+    background: #e74c3c;
+    color: white;
+    width: 160px;  /* تغيير العرض */
+    height: 50px;  /* تغيير الارتفاع */
+}
+
+.btn.departure:hover {
+    background: #c0392b;
+}
+
+
+
     </style>
 </head>
 <body>
@@ -116,19 +144,25 @@
     <h2>📌 تسجيل الحضور والانصراف</h2>
 
 
+<!-- ✅ صندوق تسجيل الحضور والانصراف -->
+<div class="container">
 
-    <!-- ✅ صندوق تسجيل الحضور والانصراف -->
-    <div class="container">
-
-    <!-- ✅ خريطة الموقع الجغرافي -->
+    <!-- ✅ خريطة الموقع الجغرافي مع زر تحديد الموقع -->
     <div id="map-container">
+
         <iframe id="map" src="https://www.openstreetmap.org/export/embed.html?bbox=30.9469971%2C30.0519716%2C30.9569971%2C30.0619716&amp;layer=mapnik" style="border: 2px solid white;"></iframe>
-        <button onclick="locateUser()" class="btn locate-btn">📍 تحديد موقعي</button>
+        <button onclick="locateUser()" class="locate-btn">📍</button>
     </div>
-        <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
+ <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
+    <!-- ✅ أزرار الحضور والانصراف داخل نفس الكونتينر -->
+    <div class="buttons-container">
+
         <button class="btn attendance" onclick="registerAttendance()">✅ تسجيل الحضور</button>
         <button class="btn departure" onclick="registerDeparture()">❌ تسجيل الانصراف</button>
     </div>
+
+</div>
+
 
     <script>
         function locateUser() {
@@ -263,13 +297,48 @@ function locateUser() {
                 const fp = await fpPromise;
                 const result = await fp.get();
                 deviceFingerprint = result.visitorId;
-                document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة!";
+                document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة";
                 console.log("بصمة الجهاز:", deviceFingerprint);
             } catch (error) {
                 document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
                 console.error("خطأ في تحميل بصمة الجهاز:", error);
             }
         }
+
+
+function updateCircle() {
+    const companyLat = 30.0569716;
+    const companyLon = 30.9519971;
+    const allowedRadius = 555; // نصف قطر المنطقة المسموح بها بالمتر
+
+    // حساب نسبة التغطية بناءً على مقياس الخريطة
+    let scaleFactor = allowedRadius / 10000; 
+
+    let circleElement = document.getElementById("location-circle");
+    circleElement.setAttribute("cx", "50%");
+    circleElement.setAttribute("cy", "50%");
+    circleElement.setAttribute("r", `${scaleFactor * 150}%`); // ضبط الحجم النسبي للدائرة
+}
+
+// استدعاء تحديث الدائرة عند تحميل الصفحة
+window.onload = function () {
+    loadFingerprint();
+    updateCircle();
+};
+
+function registerAttendance() {
+    let today = new Date().toISOString().split('T')[0]; // الحصول على تاريخ اليوم فقط
+    let lastAttendance = localStorage.getItem("lastAttendance");
+
+    if (lastAttendance === today) {
+        alert("✅ لقد قمت بتسجيل الحضور بالفعل اليوم.");
+        return;
+    }
+
+    checkLocationAndSendData("حضور");
+    localStorage.setItem("lastAttendance", today); // حفظ تسجيل الحضور لليوم
+}
+
 
         window.onload = loadFingerprint;
     </script>
