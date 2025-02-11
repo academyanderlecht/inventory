@@ -14,6 +14,14 @@
             padding: 0;
             box-sizing: border-box;
             font-family: 'Cairo', sans-serif;
+
+html, body {
+    overflow: hidden; /* يمنع التمرير في الصفحة */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
         }
         body {
             background: linear-gradient(to right, #2c3e50, #4ca1af);
@@ -31,6 +39,8 @@
             font-weight: bold;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
         }
+
+
        #map-container {
     position: relative;
     width: 100%;
@@ -45,7 +55,18 @@
     border-radius: 8px;
 }
 
-
+        header {
+            position: sticky; /* يبقى ثابتًا عند التمرير */
+            top: 0;
+            width: 100%;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 22px;
+            font-weight: bold;
+            z-index: 1000; /* يظهر فوق جميع العناصر */
+  margin-bottom: 150px;
+        }
 
         .container {
             background: rgba(255, 255, 255, 0.1);
@@ -108,6 +129,8 @@
     transition: 0.3s;
     font-size: 18px;
     font-weight: bold;
+    white-space: nowrap; /* يمنع النص من الانتقال إلى سطر جديد */
+    text-overflow: ellipsis; /* يضيف "..." إذا كان النص أطول من اللازم */
 }
 
 /* ❗ التحكم في حجم زر الحضور */
@@ -139,10 +162,10 @@
     </style>
 </head>
 <body>
-
-    <!-- 📌 العنوان الرئيسي -->
-    <h2>📌 تسجيل الحضور والانصراف</h2>
-
+ <!-- ✅ الهيدر -->
+    <header>
+        📌 تسجيل الحضور والانصراف
+    </header>
 
 <!-- ✅ صندوق تسجيل الحضور والانصراف -->
 <div class="container">
