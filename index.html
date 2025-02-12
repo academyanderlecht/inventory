@@ -189,84 +189,143 @@ html, body {
 
 <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
 <script>
-    var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec";
+    var googleScriptURL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
+    var companyLat = 30.0569716;
+    var companyLon = 30.9519971;
     var deviceFingerprint = "";
+
+    function generateUUID() {
+        let uuid = localStorage.getItem("deviceUUID");
+        if (!uuid) {
+            uuid = crypto.randomUUID(); // إنشاء UUID جديد
+            localStorage.setItem("deviceUUID", uuid);
+        }
+        return uuid;
+    }
 
     async function loadFingerprint() {
         try {
+            let savedFingerprint = localStorage.getItem("savedFingerprint");
+            let savedScreenSize = localStorage.getItem("savedScreenSize");
+            let savedTimezone = localStorage.getItem("savedTimezone");
             let savedUUID = localStorage.getItem("deviceUUID");
-            let savedFingerprint = indexedDBStorage("get", "savedFingerprint"); // قراءة البصمة من IndexedDB
 
             let currentScreenSize = `${screen.width}x${screen.height}`;
             let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            let deviceMemory = navigator.deviceMemory || "Unknown";
-            let cpuCores = navigator.hardwareConcurrency || "Unknown";
+            let currentUUID = generateUUID();
 
             const fpPromise = FingerprintJS.load();
             const fp = await fpPromise;
             const result = await fp.get();
             deviceFingerprint = result.visitorId;
 
-            // إنشاء UUID لأول مرة
-            if (!savedUUID) {
-                savedUUID = crypto.randomUUID();
-                localStorage.setItem("deviceUUID", savedUUID);
-            }
-
-            // إنشاء بصمة ثابتة تعتمد على مكونات الجهاز
-            let stableFingerprint = `${savedUUID}-${deviceMemory}-${cpuCores}-${currentScreenSize}-${currentTimezone}`;
-
-            if (savedFingerprint === stableFingerprint) {
+            if (savedFingerprint && savedUUID === currentUUID) {
+                if (savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
+                    alert(`⚠️ بصمتك تغيرت لكن الجهاز نفسه، كانت بصمتك القديمة: ${savedFingerprint} والآن: ${deviceFingerprint}`);
+                }
                 document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
-                console.log("✅ جهاز معروف - بصمة ثابتة:", stableFingerprint);
-            } else if (savedUUID) {
-                document.getElementById("status").innerText = `⚠️ بصمتك تغيرت ولكن الجهاز نفسه!`;
-                console.log(`⚠️ بصمة جديدة ولكن UUID ثابت: ${savedUUID}`);
             } else {
-                indexedDBStorage("set", "savedFingerprint", stableFingerprint);
+                localStorage.setItem("savedFingerprint", deviceFingerprint);
+                localStorage.setItem("savedScreenSize", currentScreenSize);
+                localStorage.setItem("savedTimezone", currentTimezone);
+                localStorage.setItem("deviceUUID", currentUUID);
                 document.getElementById("status").innerText = "✅ جهازك مسجل الآن";
-                console.log("✅ جهاز جديد - تم تسجيل بصمة جديدة:", stableFingerprint);
             }
-
-            // إعادة تخزين البصمة لضمان عدم حذفها
-            indexedDBStorage("set", "savedFingerprint", stableFingerprint);
         } catch (error) {
             document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
             console.error("⚠️ خطأ في تحميل بصمة الجهاز:", error);
         }
     }
 
-    function indexedDBStorage(action, key, value) {
-        return new Promise((resolve, reject) => {
-            let request = indexedDB.open("FingerprintDB", 1);
+    function checkFingerprintBeforeAttendance() {
+        let savedFingerprint = localStorage.getItem("savedFingerprint");
+        let savedUUID = localStorage.getItem("deviceUUID");
 
-            request.onupgradeneeded = function(event) {
-                let db = event.target.result;
-                if (!db.objectStoreNames.contains("fingerprints")) {
-                    db.createObjectStore("fingerprints");
+        if (!savedFingerprint || !savedUUID) {
+            alert("❌ جهازك غير مسجل، يرجى التسجيل أولاً!");
+            return false;
+        }
+
+        if (savedUUID !== generateUUID()) {
+            alert("❌ لا يمكنك تسجيل الدخول من جهاز مختلف!");
+            return false;
+        }
+
+        return true;
+    }
+
+    function registerAttendance() {
+        if (!checkFingerprintBeforeAttendance()) return;
+        checkLocationAndSendData("حضور");
+    }
+
+    function registerDeparture() {
+        if (!checkFingerprintBeforeAttendance()) return;
+        if (!localStorage.getItem("attendanceRecorded")) {
+            alert("❌ لا يمكنك تسجيل الانصراف قبل تسجيل الحضور!");
+            return;
+        }
+        checkLocationAndSendData("انصراف");
+    }
+
+    function checkLocationAndSendData(status) {
+        if (!navigator.geolocation) {
+            alert("❌ جهازك لا يدعم الموقع الجغرافي.");
+            return;
+        }
+
+        if (!deviceFingerprint) {
+            alert("🔄 لم يتم تحميل بصمة الجهاز بعد. انتظر قليلًا.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLon = position.coords.longitude;
+            var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
+
+            if (distance <= 555) {
+                sendDataToGoogleSheets(userLat, userLon, deviceFingerprint, status);
+                if (status === "حضور") {
+                    localStorage.setItem("attendanceRecorded", "true");
                 }
-            };
-
-            request.onsuccess = function(event) {
-                let db = event.target.result;
-                let transaction = db.transaction("fingerprints", "readwrite");
-                let store = transaction.objectStore("fingerprints");
-
-                if (action === "set") {
-                    store.put(value, key);
-                    resolve(true);
-                } else if (action === "get") {
-                    let getRequest = store.get(key);
-                    getRequest.onsuccess = function() {
-                        resolve(getRequest.result || null);
-                    };
-                }
-            };
-
-            request.onerror = function() {
-                reject("❌ خطأ في IndexedDB.");
-            };
+            } else {
+                alert("❌ أنت خارج نطاق الشركة.");
+            }
+        }, function(error) {
+            alert("❌ حدث خطأ أثناء جمع الموقع: " + error.message);
         });
+    }
+
+    function sendDataToGoogleSheets(latitude, longitude, fingerprint, status) {
+        var data = new FormData();
+        data.append("fingerprint", fingerprint);
+        data.append("latitude", latitude);
+        data.append("longitude", longitude);
+        data.append("status", status);
+
+        fetch(googleScriptURL, {
+            method: "POST",
+            body: data
+        })
+        .then(response => response.text())
+        .then(responseText => {
+            alert(responseText);
+        })
+        .catch(error => {
+            alert("❌ حدث خطأ أثناء الإرسال: " + error);
+        });
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c * 1000;
     }
 
     window.onload = function () {
