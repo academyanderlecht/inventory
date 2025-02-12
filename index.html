@@ -210,7 +210,7 @@ html, body {
         var companyLon = 30.9519971;
         var deviceFingerprint = "";
 
-  <script>
+ 
     async function loadFingerprint() {
         try {
             let savedFingerprint = localStorage.getItem("savedFingerprint");
@@ -257,7 +257,7 @@ html, body {
     }
 
     window.onload = loadFingerprint;
-</script>
+
 
         function checkFingerprintBeforeAttendance() {
             let savedFingerprint = localStorage.getItem("savedFingerprint");
