@@ -184,6 +184,7 @@ html, body {
         <button class="btn departure" onclick="registerDeparture()">❌ تسجيل الانصراف</button>
     </div>
 
+
 </div>
 
 
@@ -270,7 +271,7 @@ function locateUser() {
                 var userLon = position.coords.longitude;
                 var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
 
-                if (distance <= 555) {
+                if (distance <= 55555) {
                     sendDataToGoogleSheets(userLat, userLon, deviceFingerprint, status);
                     if (status === "حضور") {
                         localStorage.setItem("attendanceRecorded", "true");
@@ -353,10 +354,6 @@ function registerAttendance() {
     let today = new Date().toISOString().split('T')[0]; // الحصول على تاريخ اليوم فقط
     let lastAttendance = localStorage.getItem("lastAttendance");
 
-    if (lastAttendance === today) {
-        alert("✅ لقد قمت بتسجيل الحضور بالفعل اليوم.");
-        return;
-    }
 
     checkLocationAndSendData("حضور");
     localStorage.setItem("lastAttendance", today); // حفظ تسجيل الحضور لليوم
