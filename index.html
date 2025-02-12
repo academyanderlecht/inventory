@@ -187,21 +187,7 @@ html, body {
 
 </div>
 
-<!DOCTYPE html>
-<html lang="ar">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام تسجيل الحضور</title>
-</head>
-<body>
-    <h2>نظام تسجيل الحضور والانصراف</h2>
-    <p id="status">🔄 جاري تحميل بصمة الجهاز...</p>
-    
-    <button onclick="registerAttendance()">📍 تسجيل الحضور</button>
-    <button onclick="registerDeparture()">🚪 تسجيل الانصراف</button>
 
-    <iframe id="map" width="600" height="450"></iframe>
 
     <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
     <script>
@@ -211,53 +197,39 @@ html, body {
         var deviceFingerprint = "";
 
  
-    async function loadFingerprint() {
-        try {
-            let savedFingerprint = localStorage.getItem("savedFingerprint");
-            let savedUserAgent = localStorage.getItem("savedUserAgent");
-            let savedScreenSize = localStorage.getItem("savedScreenSize");
-            let savedTimezone = localStorage.getItem("savedTimezone");
+        async function loadFingerprint() {
+            try {
+                let savedFingerprint = localStorage.getItem("savedFingerprint");
+                let savedUserAgent = localStorage.getItem("savedUserAgent");
+                let savedScreenSize = localStorage.getItem("savedScreenSize");
+                let savedTimezone = localStorage.getItem("savedTimezone");
 
-            let currentUserAgent = navigator.userAgent;
-            let currentScreenSize = `${screen.width}x${screen.height}`;
-            let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                let currentUserAgent = navigator.userAgent;
+                let currentScreenSize = `${screen.width}x${screen.height}`;
+                let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            const fpPromise = FingerprintJS.load();
-            const fp = await fpPromise;
-            const result = await fp.get();
-            let newFingerprint = result.visitorId;
+                const fpPromise = FingerprintJS.load();
+                const fp = await fpPromise;
+                const result = await fp.get();
+                deviceFingerprint = result.visitorId;
 
-            if (savedFingerprint) {
-                if (savedUserAgent === currentUserAgent && savedScreenSize === currentScreenSize && savedTimezone === currentTimezone) {
-                    if (savedFingerprint !== newFingerprint) {
-                        alert(`⚠️ تغيرت بصمة جهازك ولكن الجهاز نفسه:\n\n🔹 البصمة القديمة: ${savedFingerprint}\n🔹 البصمة الجديدة: ${newFingerprint}`);
-                        console.log(`⚠️ البصمة تغيرت ولكن الجهاز نفسه:\nالبصمة القديمة: ${savedFingerprint}\nالبصمة الجديدة: ${newFingerprint}`);
-                    }
+                if (savedFingerprint && savedUserAgent === currentUserAgent && savedScreenSize === currentScreenSize && savedTimezone === currentTimezone) {
                     document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
+                    console.log("✅ جهاز معروف - بصمة محفوظة:", deviceFingerprint);
                 } else {
-                    alert("❌ جهاز جديد بالكامل، لا يمكنك التسجيل من جهاز مختلف!");
-                    return;
+                    localStorage.setItem("savedFingerprint", deviceFingerprint);
+                    localStorage.setItem("savedUserAgent", currentUserAgent);
+                    localStorage.setItem("savedScreenSize", currentScreenSize);
+                    localStorage.setItem("savedTimezone", currentTimezone);
+                    localStorage.setItem("fingerprintCreatedAt", new Date().toISOString());
+                    document.getElementById("status").innerText = "✅ جهازك مسجل الآن";
+                    console.log("✅ جهاز جديد - تم تسجيل بصمة جديدة:", deviceFingerprint);
                 }
-            } else {
-                document.getElementById("status").innerText = "✅ جهازك مسجل الآن لأول مرة";
-                console.log("✅ جهاز جديد - تم تسجيل بصمة جديدة:", newFingerprint);
+            } catch (error) {
+                document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
+                console.error("⚠️ خطأ في تحميل بصمة الجهاز:", error);
             }
-
-            // تحديث البصمة والبيانات
-            localStorage.setItem("savedFingerprint", newFingerprint);
-            localStorage.setItem("savedUserAgent", currentUserAgent);
-            localStorage.setItem("savedScreenSize", currentScreenSize);
-            localStorage.setItem("savedTimezone", currentTimezone);
-            localStorage.setItem("fingerprintCreatedAt", new Date().toISOString());
-
-        } catch (error) {
-            document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
-            console.error("⚠️ خطأ في تحميل بصمة الجهاز:", error);
         }
-    }
-
-    window.onload = loadFingerprint;
-
 
         function checkFingerprintBeforeAttendance() {
             let savedFingerprint = localStorage.getItem("savedFingerprint");
