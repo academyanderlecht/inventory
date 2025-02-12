@@ -187,67 +187,113 @@ html, body {
 
 </div>
 
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام تسجيل الحضور</title>
+</head>
+<body>
+    <h2>نظام تسجيل الحضور والانصراف</h2>
+    <p id="status">🔄 جاري تحميل بصمة الجهاز...</p>
+    
+    <button onclick="registerAttendance()">📍 تسجيل الحضور</button>
+    <button onclick="registerDeparture()">🚪 تسجيل الانصراف</button>
 
-    <script>
-        function locateUser() {
-            if (!navigator.geolocation) {
-                alert("❌ جهازك لا يدعم الموقع الجغرافي.");
-                return;
-            }
+    <iframe id="map" width="600" height="450"></iframe>
 
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    var userLat = position.coords.latitude;
-                    var userLon = position.coords.longitude;
-
-                    // تحديث الخريطة بموقع الموظف المباشر
-                    var mapURL = `https://www.openstreetmap.org/export/embed.html?bbox=${userLon - 0.005}%2C${userLat - 0.005}%2C${userLon + 0.005}%2C${userLat + 0.005}&amp;layer=mapnik&marker=${userLat},${userLon}`;
-                    
-                    document.getElementById("map").src = mapURL;
-                },
-                function(error) {
-                    alert("❌ تعذر الحصول على الموقع: " + error.message);
-                }
-            );
-        }
-    </script>
-
-</body>
-</html>
-
-
+    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
     <script>
         var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec";
-var companyLat = 30.0569716;
-var companyLon = 30.9519971;
+        var companyLat = 30.0569716;
+        var companyLon = 30.9519971;
         var deviceFingerprint = "";
-function locateUser() {
-    if (!navigator.geolocation) {
-        alert("❌ جهازك لا يدعم الموقع الجغرافي.");
-        return;
+
+  <script>
+    async function loadFingerprint() {
+        try {
+            let savedFingerprint = localStorage.getItem("savedFingerprint");
+            let savedUserAgent = localStorage.getItem("savedUserAgent");
+            let savedScreenSize = localStorage.getItem("savedScreenSize");
+            let savedTimezone = localStorage.getItem("savedTimezone");
+
+            let currentUserAgent = navigator.userAgent;
+            let currentScreenSize = `${screen.width}x${screen.height}`;
+            let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            const fpPromise = FingerprintJS.load();
+            const fp = await fpPromise;
+            const result = await fp.get();
+            let newFingerprint = result.visitorId;
+
+            if (savedFingerprint) {
+                if (savedUserAgent === currentUserAgent && savedScreenSize === currentScreenSize && savedTimezone === currentTimezone) {
+                    if (savedFingerprint !== newFingerprint) {
+                        alert(`⚠️ تغيرت بصمة جهازك ولكن الجهاز نفسه:\n\n🔹 البصمة القديمة: ${savedFingerprint}\n🔹 البصمة الجديدة: ${newFingerprint}`);
+                        console.log(`⚠️ البصمة تغيرت ولكن الجهاز نفسه:\nالبصمة القديمة: ${savedFingerprint}\nالبصمة الجديدة: ${newFingerprint}`);
+                    }
+                    document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
+                } else {
+                    alert("❌ جهاز جديد بالكامل، لا يمكنك التسجيل من جهاز مختلف!");
+                    return;
+                }
+            } else {
+                document.getElementById("status").innerText = "✅ جهازك مسجل الآن لأول مرة";
+                console.log("✅ جهاز جديد - تم تسجيل بصمة جديدة:", newFingerprint);
+            }
+
+            // تحديث البصمة والبيانات
+            localStorage.setItem("savedFingerprint", newFingerprint);
+            localStorage.setItem("savedUserAgent", currentUserAgent);
+            localStorage.setItem("savedScreenSize", currentScreenSize);
+            localStorage.setItem("savedTimezone", currentTimezone);
+            localStorage.setItem("fingerprintCreatedAt", new Date().toISOString());
+
+        } catch (error) {
+            document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
+            console.error("⚠️ خطأ في تحميل بصمة الجهاز:", error);
+        }
     }
 
-    navigator.geolocation.getCurrentPosition(
-        function(position) {
-            var userLat = position.coords.latitude;
-            var userLon = position.coords.longitude;
+    window.onload = loadFingerprint;
+</script>
 
-            // تحديث الخريطة بموقع الموظف المباشر
-            var mapURL = `https://www.openstreetmap.org/export/embed.html?bbox=${userLon - 0.005}%2C${userLat - 0.005}%2C${userLon + 0.005}%2C${userLat + 0.005}&amp;layer=mapnik&marker=${userLat},${userLon}`;
-            
-            document.getElementById("map").src = mapURL;
-        },
-        function(error) {
-            alert("❌ تعذر الحصول على الموقع: " + error.message);
+        function checkFingerprintBeforeAttendance() {
+            let savedFingerprint = localStorage.getItem("savedFingerprint");
+            let savedUserAgent = localStorage.getItem("savedUserAgent");
+            let savedScreenSize = localStorage.getItem("savedScreenSize");
+            let savedTimezone = localStorage.getItem("savedTimezone");
+
+            let currentUserAgent = navigator.userAgent;
+            let currentScreenSize = `${screen.width}x${screen.height}`;
+            let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            if (!savedFingerprint) {
+                alert("❌ جهازك غير مسجل، يرجى التسجيل أولاً!");
+                return false;
+            }
+
+            if (savedUserAgent !== currentUserAgent || savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
+                alert("⚠️ يبدو أن بصمة جهازك تغيرت، لكن الجهاز نفسه. إذا كنت تواجه مشكلة، اتصل بالدعم.");
+                return true;
+            }
+
+            if (savedFingerprint !== deviceFingerprint) {
+                alert("❌ لا يمكنك تسجيل الدخول من جهاز مختلف!");
+                return false;
+            }
+
+            return true;
         }
-    );
-}
 
         function registerAttendance() {
+            if (!checkFingerprintBeforeAttendance()) return;
             checkLocationAndSendData("حضور");
         }
 
         function registerDeparture() {
+            if (!checkFingerprintBeforeAttendance()) return;
             if (!localStorage.getItem("attendanceRecorded")) {
                 alert("❌ لا يمكنك تسجيل الانصراف قبل تسجيل الحضور!");
                 return;
@@ -271,7 +317,7 @@ function locateUser() {
                 var userLon = position.coords.longitude;
                 var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
 
-                if (distance <= 55555) {
+                if (distance <= 555) {
                     sendDataToGoogleSheets(userLat, userLon, deviceFingerprint, status);
                     if (status === "حضور") {
                         localStorage.setItem("attendanceRecorded", "true");
@@ -312,53 +358,8 @@ function locateUser() {
                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
                     Math.sin(dLon / 2) * Math.sin(dLon / 2);
             var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            return R * c * 1000; // تحويل إلى متر
+            return R * c * 1000;
         }
-
-        async function loadFingerprint() {
-            try {
-                const fpPromise = FingerprintJS.load();
-                const fp = await fpPromise;
-                const result = await fp.get();
-                deviceFingerprint = result.visitorId;
-                document.getElementById("status").innerText = "✅ بصمة الجهاز جاهزة";
-                console.log("بصمة الجهاز:", deviceFingerprint);
-            } catch (error) {
-                document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
-                console.error("خطأ في تحميل بصمة الجهاز:", error);
-            }
-        }
-
-
-function updateCircle() {
-    const companyLat = 30.0569716;
-    const companyLon = 30.9519971;
-    const allowedRadius = 555; // نصف قطر المنطقة المسموح بها بالمتر
-
-    // حساب نسبة التغطية بناءً على مقياس الخريطة
-    let scaleFactor = allowedRadius / 10000; 
-
-    let circleElement = document.getElementById("location-circle");
-    circleElement.setAttribute("cx", "50%");
-    circleElement.setAttribute("cy", "50%");
-    circleElement.setAttribute("r", `${scaleFactor * 150}%`); // ضبط الحجم النسبي للدائرة
-}
-
-// استدعاء تحديث الدائرة عند تحميل الصفحة
-window.onload = function () {
-    loadFingerprint();
-    updateCircle();
-};
-
-function registerAttendance() {
-    let today = new Date().toISOString().split('T')[0]; // الحصول على تاريخ اليوم فقط
-    let lastAttendance = localStorage.getItem("lastAttendance");
-
-
-    checkLocationAndSendData("حضور");
-    localStorage.setItem("lastAttendance", today); // حفظ تسجيل الحضور لليوم
-}
-
 
         window.onload = loadFingerprint;
     </script>
