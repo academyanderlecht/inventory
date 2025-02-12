@@ -188,40 +188,36 @@ html, body {
 </div>
 
 
-
-    <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
     <script>
         var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec";
         var companyLat = 30.0569716;
         var companyLon = 30.9519971;
         var deviceFingerprint = "";
 
- 
         async function loadFingerprint() {
             try {
                 let savedFingerprint = localStorage.getItem("savedFingerprint");
-                let savedUserAgent = localStorage.getItem("savedUserAgent");
                 let savedScreenSize = localStorage.getItem("savedScreenSize");
                 let savedTimezone = localStorage.getItem("savedTimezone");
 
-                let currentUserAgent = navigator.userAgent;
                 let currentScreenSize = `${screen.width}x${screen.height}`;
                 let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
                 const fpPromise = FingerprintJS.load();
                 const fp = await fpPromise;
                 const result = await fp.get();
-                deviceFingerprint = result.visitorId;
+                deviceFingerprint = result.visitorId; // بصمة الجهاز بناءً على مكتبة FingerprintJS
 
-                if (savedFingerprint && savedUserAgent === currentUserAgent && savedScreenSize === currentScreenSize && savedTimezone === currentTimezone) {
+                if (savedFingerprint && savedScreenSize === currentScreenSize && savedTimezone === currentTimezone) {
                     document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
                     console.log("✅ جهاز معروف - بصمة محفوظة:", deviceFingerprint);
                 } else {
+                    if (savedFingerprint) {
+                        alert(`⚠️ بصمتك تغيّرت! \nالبصمة القديمة: ${savedFingerprint} \nالبصمة الجديدة: ${deviceFingerprint}`);
+                    }
                     localStorage.setItem("savedFingerprint", deviceFingerprint);
-                    localStorage.setItem("savedUserAgent", currentUserAgent);
                     localStorage.setItem("savedScreenSize", currentScreenSize);
                     localStorage.setItem("savedTimezone", currentTimezone);
-                    localStorage.setItem("fingerprintCreatedAt", new Date().toISOString());
                     document.getElementById("status").innerText = "✅ جهازك مسجل الآن";
                     console.log("✅ جهاز جديد - تم تسجيل بصمة جديدة:", deviceFingerprint);
                 }
@@ -233,11 +229,9 @@ html, body {
 
         function checkFingerprintBeforeAttendance() {
             let savedFingerprint = localStorage.getItem("savedFingerprint");
-            let savedUserAgent = localStorage.getItem("savedUserAgent");
             let savedScreenSize = localStorage.getItem("savedScreenSize");
             let savedTimezone = localStorage.getItem("savedTimezone");
 
-            let currentUserAgent = navigator.userAgent;
             let currentScreenSize = `${screen.width}x${screen.height}`;
             let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -246,7 +240,7 @@ html, body {
                 return false;
             }
 
-            if (savedUserAgent !== currentUserAgent || savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
+            if (savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
                 alert("⚠️ يبدو أن بصمة جهازك تغيرت، لكن الجهاز نفسه. إذا كنت تواجه مشكلة، اتصل بالدعم.");
                 return true;
             }
@@ -333,7 +327,17 @@ html, body {
             return R * c * 1000;
         }
 
-        window.onload = loadFingerprint;
+        async function requestPersistentStorage() {
+            if (navigator.storage && navigator.storage.persist) {
+                const isPersistent = await navigator.storage.persist();
+                console.log(isPersistent ? "✅ التخزين محمي من الحذف" : "⚠️ قد يتم مسح التخزين عند تنظيف المتصفح");
+            }
+        }
+
+        window.onload = function () {
+            requestPersistentStorage();
+            loadFingerprint();
+        };
     </script>
 </body>
 </html>
