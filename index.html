@@ -189,6 +189,197 @@ html, body {
 
 <script src="https://openfpcdn.io/fingerprintjs/v4"></script>
 <script>
+    var googleScriptURL = "<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الحضور والانصراف</title>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+
+html, body {
+    overflow: hidden; /* يمنع التمرير في الصفحة */
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+        }
+        body {
+            background: linear-gradient(to right, #2c3e50, #4ca1af);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 80vh;
+            text-align: center;
+        }
+        h2 {
+            font-size: 26px;
+            margin-bottom: 80px;
+            font-weight: bold;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+
+       #map-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px; /* عرض الخريطة */
+    height: 300px; /* ارتفاع الخريطة */
+    margin-bottom: 15px;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+}
+
+        header {
+            position: sticky; /* يبقى ثابتًا عند التمرير */
+            top: 0;
+            width: 100%;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 22px;
+            font-weight: bold;
+            z-index: 1000; /* يظهر فوق جميع العناصر */
+  margin-bottom: 150px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 450px;
+            height: 500px;
+        }
+        p {
+            font-size: 16px;
+            margin-bottom: 15px;
+            font-weight: 600;
+}
+
+/* ✅ زر تحديد الموقع */
+.locate-btn {
+    position: absolute;
+    bottom: 5px;  /* تم نقله للأسفل */
+    left: 10px;   /* تم نقله لليمين */
+    width: 45px;   /* حجم الزر */
+    height: 45px;
+    background: white; /* لون الزر */
+    color: #3498db; /* لون الأيقونة */
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease;
+}
+
+.locate-btn:hover {
+    background: #f0f0f0;
+}
+
+.locate-btn:active {
+    transform: scale(0.95);
+}
+
+
+
+.buttons-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 50px; /* تحريك الأزرار لأسفل */
+}
+
+
+.btn {
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap; /* يمنع النص من الانتقال إلى سطر جديد */
+    text-overflow: ellipsis; /* يضيف "..." إذا كان النص أطول من اللازم */
+}
+
+/* ❗ التحكم في حجم زر الحضور */
+.btn.attendance {
+    background: #2ecc71;
+    color: white;
+    width: 160px;  /* تغيير العرض */
+    height: 50px;  /* تغيير الارتفاع */
+}
+
+.btn.attendance:hover {
+    background: #27ae60;
+}
+
+/* ❗ التحكم في حجم زر الانصراف */
+.btn.departure {
+    background: #e74c3c;
+    color: white;
+    width: 160px;  /* تغيير العرض */
+    height: 50px;  /* تغيير الارتفاع */
+}
+
+.btn.departure:hover {
+    background: #c0392b;
+}
+
+
+
+    </style>
+</head>
+<body>
+ <!-- ✅ الهيدر -->
+    <header>
+        📌 تسجيل الحضور والانصراف
+    </header>
+
+<!-- ✅ صندوق تسجيل الحضور والانصراف -->
+<div class="container">
+
+    <!-- ✅ خريطة الموقع الجغرافي مع زر تحديد الموقع -->
+    <div id="map-container">
+
+        <iframe id="map" src="https://www.openstreetmap.org/export/embed.html?bbox=30.9469971%2C30.0519716%2C30.9569971%2C30.0619716&amp;layer=mapnik" style="border: 2px solid white;"></iframe>
+        <button onclick="locateUser()" class="locate-btn">📍</button>
+    </div>
+ <p id="status">🔄 جارٍ تحميل بصمة الجهاز...</p>
+    <!-- ✅ أزرار الحضور والانصراف داخل نفس الكونتينر -->
+    <div class="buttons-container">
+
+        <button class="btn attendance" onclick="registerAttendance()">✅ تسجيل الحضور</button>
+        <button class="btn departure" onclick="registerDeparture()">❌ تسجيل الانصراف</button>
+    </div>
+
+
+</div>
+
+<script src="https://openfpcdn.io/fingerprintjs/v4"></script>
+<script>
     var googleScriptURL = "https://script.google.com/macros/s/AKfycbzUJdlfuQRaK83DYwaWJHw6xbyvNhyMgAHJHA7DB0ICGG8NSCxH6cPBNRes3nRsxCcM/exec";
     var companyLat = 30.0569716;
     var companyLon = 30.9519971;
@@ -210,7 +401,7 @@ html, body {
             let savedTimezone = localStorage.getItem("savedTimezone");
             let savedUUID = localStorage.getItem("deviceUUID");
 
-            let currentScreenSize = `${screen.width}x${screen.height}`;
+            let currentScreenSize = ${screen.width}x${screen.height};
             let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             let currentUUID = generateUUID();
 
@@ -221,7 +412,152 @@ html, body {
 
             if (savedFingerprint && savedUUID === currentUUID) {
                 if (savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
-                    alert(`⚠️ بصمتك تغيرت لكن الجهاز نفسه، كانت بصمتك القديمة: ${savedFingerprint} والآن: ${deviceFingerprint}`);
+                    alert(⚠️ بصمتك تغيرت لكن الجهاز نفسه، كانت بصمتك القديمة: ${savedFingerprint} والآن: ${deviceFingerprint});
+                }
+                document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
+            } else {
+                localStorage.setItem("savedFingerprint", deviceFingerprint);
+                localStorage.setItem("savedScreenSize", currentScreenSize);
+                localStorage.setItem("savedTimezone", currentTimezone);
+                localStorage.setItem("deviceUUID", currentUUID);
+                document.getElementById("status").innerText = "✅ جهازك مسجل الآن";
+            }
+        } catch (error) {
+            document.getElementById("status").innerText = "❌ فشل تحميل بصمة الجهاز.";
+            console.error("⚠️ خطأ في تحميل بصمة الجهاز:", error);
+        }
+    }
+
+    function checkFingerprintBeforeAttendance() {
+        let savedFingerprint = localStorage.getItem("savedFingerprint");
+        let savedUUID = localStorage.getItem("deviceUUID");
+
+        if (!savedFingerprint || !savedUUID) {
+            alert("❌ جهازك غير مسجل، يرجى التسجيل أولاً!");
+            return false;
+        }
+
+        if (savedUUID !== generateUUID()) {
+            alert("❌ لا يمكنك تسجيل الدخول من جهاز مختلف!");
+            return false;
+        }
+
+        return true;
+    }
+
+    function registerAttendance() {
+        if (!checkFingerprintBeforeAttendance()) return;
+        checkLocationAndSendData("حضور");
+    }
+
+    function registerDeparture() {
+        if (!checkFingerprintBeforeAttendance()) return;
+        if (!localStorage.getItem("attendanceRecorded")) {
+            alert("❌ لا يمكنك تسجيل الانصراف قبل تسجيل الحضور!");
+            return;
+        }
+        checkLocationAndSendData("انصراف");
+    }
+
+    function checkLocationAndSendData(status) {
+        if (!navigator.geolocation) {
+            alert("❌ جهازك لا يدعم الموقع الجغرافي.");
+            return;
+        }
+
+        if (!deviceFingerprint) {
+            alert("🔄 لم يتم تحميل بصمة الجهاز بعد. انتظر قليلًا.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(function(position) {
+            var userLat = position.coords.latitude;
+            var userLon = position.coords.longitude;
+            var distance = calculateDistance(userLat, userLon, companyLat, companyLon);
+
+            if (distance <= 555) {
+                sendDataToGoogleSheets(userLat, userLon, deviceFingerprint, status);
+                if (status === "حضور") {
+                    localStorage.setItem("attendanceRecorded", "true");
+                }
+            } else {
+                alert("❌ أنت خارج نطاق الشركة.");
+            }
+        }, function(error) {
+            alert("❌ حدث خطأ أثناء جمع الموقع: " + error.message);
+        });
+    }
+
+    function sendDataToGoogleSheets(latitude, longitude, fingerprint, status) {
+        var data = new FormData();
+        data.append("fingerprint", fingerprint);
+        data.append("latitude", latitude);
+        data.append("longitude", longitude);
+        data.append("status", status);
+
+        fetch(googleScriptURL, {
+            method: "POST",
+            body: data
+        })
+        .then(response => response.text())
+        .then(responseText => {
+            alert(responseText);
+        })
+        .catch(error => {
+            alert("❌ حدث خطأ أثناء الإرسال: " + error);
+        });
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        var R = 6371;
+        var dLat = (lat2 - lat1) * Math.PI / 180;
+        var dLon = (lon2 - lon1) * Math.PI / 180;
+        var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c * 1000;
+    }
+
+    window.onload = function () {
+        loadFingerprint();
+    };
+</script>
+
+</body>
+</html>"; 
+    var companyLat = 30.0569716;
+    var companyLon = 30.9519971;
+    var deviceFingerprint = "";
+
+    function generateUUID() {
+        let uuid = localStorage.getItem("deviceUUID");
+        if (!uuid) {
+            uuid = crypto.randomUUID(); // إنشاء UUID جديد
+            localStorage.setItem("deviceUUID", uuid);
+        }
+        return uuid;
+    }
+
+    async function loadFingerprint() {
+        try {
+            let savedFingerprint = localStorage.getItem("savedFingerprint");
+            let savedScreenSize = localStorage.getItem("savedScreenSize");
+            let savedTimezone = localStorage.getItem("savedTimezone");
+            let savedUUID = localStorage.getItem("deviceUUID");
+
+            let currentScreenSize = ${screen.width}x${screen.height};
+            let currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            let currentUUID = generateUUID();
+
+            const fpPromise = FingerprintJS.load();
+            const fp = await fpPromise;
+            const result = await fp.get();
+            deviceFingerprint = result.visitorId;
+
+            if (savedFingerprint && savedUUID === currentUUID) {
+                if (savedScreenSize !== currentScreenSize || savedTimezone !== currentTimezone) {
+                    alert(⚠️ بصمتك تغيرت لكن الجهاز نفسه، كانت بصمتك القديمة: ${savedFingerprint} والآن: ${deviceFingerprint});
                 }
                 document.getElementById("status").innerText = "✅ جهازك معروف وتم التحقق منه";
             } else {
